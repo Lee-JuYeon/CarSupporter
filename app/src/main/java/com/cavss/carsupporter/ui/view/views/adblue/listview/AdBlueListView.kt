@@ -1,10 +1,13 @@
 package com.cavss.carsupporter.ui.view.views.adblue.listview
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Text
@@ -26,21 +29,28 @@ import androidx.compose.ui.unit.sp
 import com.cavss.carsupporter.R
 import com.cavss.carsupporter.extensions.gradientBackground
 import com.cavss.carsupporter.model.adblue.AdBlueModel
+import com.cavss.carsupporter.vm.AdBlueVM
+import com.google.android.gms.maps.model.LatLng
 
 @Composable
-fun AdBlueListView(list : List<AdBlueModel>) {
-    val configuration = LocalConfiguration.current
-    val screenWidth = configuration.screenWidthDp.dp
-
-    LazyColumn(
+fun AdBlueListView(
+    list : List<AdBlueModel>,
+    adBlueVM: AdBlueVM
+) {
+    LazyRow(
         modifier = Modifier
-            .fillMaxHeight()
-            .width(screenWidth)
             .background(Color.Black)
             .padding(5.dp),
         content = {
             items(list) { model ->
-                AdBlueListItem(model = model)
+                if (model.stock != 0.0){
+                    AdBlueListItem(
+                        model = model,
+                        whenClicked = { map ->
+                            adBlueVM.setClickedPosition(map)
+                        }
+                    )
+                }
             }
         }
     )
@@ -48,31 +58,34 @@ fun AdBlueListView(list : List<AdBlueModel>) {
 
 
 @Composable
-fun AdBlueListItem(model : AdBlueModel){
+fun AdBlueListItem(
+    model : AdBlueModel,
+    whenClicked : (Map<String, Double>) -> Unit
+){
 
-    val gridentBackgroundColor : List<Color> = when(model.stock){
-        in 1000.0 .. Double.MAX_VALUE -> {
-            listOf(Color.Green.copy(0.2f), Color.Green.copy(0.0f),Color.Green.copy(0.0f), Color.Green.copy(0.0f),Color.Green.copy(0.9f))
-        }
-        in 300.0 .. 999.9 -> {
-            listOf(Color.Yellow.copy(0.2f), Color.Yellow.copy(0.0f),Color.Yellow.copy(0.0f), Color.Yellow.copy(0.0f),Color.Yellow.copy(0.9f))
-        }
-        in 1.0 .. 299.9 -> {
-            listOf(Color.Red.copy(0.2f), Color.Red.copy(0.0f),Color.Red.copy(0.0f), Color.Red.copy(0.0f),Color.Red.copy(0.9f))
-        }
-        else -> {
-            listOf(Color.White.copy(0.2f), Color.White.copy(0.0f),Color.White.copy(0.0f), Color.White.copy(0.0f),Color.White.copy(0.9f))
-        }
+    val customBorderColour : Color = when(model.stock){
+        in 1000.0 .. Double.MAX_VALUE -> Color.Green
+        in 300.0 .. 999.9 -> Color.Yellow
+        else -> Color.Red
     }
-
 
     Column(
         modifier = Modifier
             .padding(3.dp)
             .fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
-            .gradientBackground(gridentBackgroundColor, 45f)
+            .border(
+                1.dp,
+                customBorderColour,
+                RoundedCornerShape(10.dp)
+            )
             .padding(5.dp)
+            .clickable {
+                whenClicked(mapOf(
+                    "lati" to model.latitude,
+                    "long" to model.longitude
+                ))
+            }
     ) {
         // 지점 이름
         Row(
@@ -165,39 +178,22 @@ fun AdBlueListItem(model : AdBlueModel){
             )
         }
 
-        // 전화번호
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier
-                .padding(top = 5.dp)
-                .fillMaxWidth()
+            horizontalArrangement = Arrangement.Start,
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Start,
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.image_call),
-                    contentDescription = "전화번호",
-                    modifier = Modifier
-                        .size(30.dp, 30.dp)
-                        .padding(5.dp),
-                    colorFilter = ColorFilter.tint(Color.LightGray)
-                )
-                Text(
-                    text = model.digit,
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Normal,
-                    modifier = Modifier
-                        .padding(3.dp)
-                )
-            }
+            Image(
+                painter = painterResource(id = R.drawable.image_call),
+                contentDescription = "전화번호",
+                modifier = Modifier
+                    .size(30.dp, 30.dp)
+                    .padding(5.dp),
+                colorFilter = ColorFilter.tint(Color.LightGray)
+            )
             Text(
-                text = "(${stringResource(id = R.string.adblue_updated)} : ${model.updateDate})",
+                text = model.digit,
                 color = Color.White,
-                fontSize = 15.sp,
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Normal,
                 modifier = Modifier
                     .padding(3.dp)
