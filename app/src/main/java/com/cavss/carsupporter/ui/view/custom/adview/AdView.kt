@@ -16,6 +16,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.LifecycleOwner
+import com.cavss.carsupporter.R
 import com.cavss.carsupporter.backend.internet.InternetManager
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
@@ -42,7 +43,8 @@ fun AdView(type : AdMobType) {
                 factory = { context ->
                     AdView(context).apply {
                         adSize = AdSize.BANNER
-                        adUnitId = BANNER_TEST_ID
+                        adUnitId = R.string.admob_key_dummy_def.toString()
+
                         loadAd(AdRequest.Builder().build())
                     }
 
