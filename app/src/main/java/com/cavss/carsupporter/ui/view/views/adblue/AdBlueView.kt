@@ -1,6 +1,7 @@
 package com.cavss.carsupporter.ui.view.views.adblue
 
 import android.Manifest
+import android.util.Log
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -15,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
@@ -22,12 +24,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import com.cavss.carsupporter.R
 import com.cavss.carsupporter.model.adblue.AdBlueModel
 import com.cavss.carsupporter.ui.view.views.adblue.listview.AdBlueListView
 import com.cavss.carsupporter.ui.view.views.adblue.mapview.AdBlueMapView
+import com.cavss.carsupporter.ui.view.views.adblue.mapview.RememberMapLifeCycleObserver
 import com.cavss.carsupporter.util.permission.MultiRequestPermission
 import com.cavss.carsupporter.vm.AdBlueVM
+import com.google.android.gms.maps.MapView
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -35,8 +43,6 @@ import kotlinx.coroutines.launch
 fun AdBlueView(adBlueVM: AdBlueVM) {
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp
-    val horizontalScrollState = rememberScrollState(0)
-    val scope = rememberCoroutineScope()
 
     val adBlueShopList = remember { mutableStateOf(listOf<AdBlueModel>()) }
     adBlueVM.getAdBlueList.observe(LocalLifecycleOwner.current) { list ->
@@ -64,13 +70,78 @@ fun AdBlueView(adBlueVM: AdBlueVM) {
 
         AdBlueColorSetView()
 
-        // Chips View
+        MultiRequestPermission(
+            permissionList = listOf(
+                Manifest.permission.INTERNET,
+                Manifest.permission.ACCESS_NETWORK_STATE,
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ),
+            modifier = Modifier
+                .fillMaxSize(),
+            whenGrated = {
+                Column(
+                    verticalArrangement = Arrangement.Top,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .fillMaxSize()
+                ) {
+                    // ListView
+                    AdBlueListView(
+                        list = adBlueShopList.value,
+                        adBlueVM = adBlueVM
+                    )
+
+                    // MapView
+                    AdBlueMapView(
+                        list = adBlueShopList,
+                        adBlueVM = adBlueVM
+                    )
+                }
+            },
+            whenDenied = {
+                Text(
+                    text = stringResource(id = R.string.permission_can_not_use_by_denied),
+                    color = androidx.compose.ui.graphics.Color.White
+                )
+            }
+        )
+    }
+}
+/*
+ val horizontalScrollState = rememberScrollState(0)
+ val scope = rememberCoroutineScope()
+  Row(
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.Start,
+            modifier = Modifier
+                .fillMaxSize()
+                .horizontalScroll(
+                    state = horizontalScrollState,
+                    enabled = false
+                )
+        ) {
+            // MapView
+            AdBlueMapView(
+                list = adBlueShopList,
+                adBlueVM = adBlueVM
+            )
+
+            // ListView
+            AdBlueListView(
+                list = adBlueShopList.value
+            )
+        }
+
+ */
+/*
+ // Chips View
         LazyRow(
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier,
             content = {
-                val tabList = listOf<Int>(R.string.tab_nearby, R.string.tab_enough, R.string.tab_map, R.string.tab_list)
+                val tabList = listOf<Int>( R.string.tab_enough, R.string.tab_map, R.string.tab_list)
                 val tabColour = Color.LightGray
                 items(tabList){ title ->
                     Text(
@@ -97,16 +168,6 @@ fun AdBlueView(adBlueVM: AdBlueVM) {
                                     R.string.tab_enough -> {
                                         adBlueShopList.value.sortedByDescending { it.stock }
                                     }
-                                    R.string.tab_list -> {
-                                        scope.launch(Dispatchers.IO) {
-                                            horizontalScrollState.scrollTo(screenWidth)
-                                        }
-                                    }
-                                    R.string.tab_map -> {
-                                        scope.launch(Dispatchers.IO) {
-                                            horizontalScrollState.scrollTo(0)
-                                        }
-                                    }
                                     R.string.tab_cheap -> {
 
                                     }
@@ -114,66 +175,6 @@ fun AdBlueView(adBlueVM: AdBlueVM) {
                             }
                     )
                 }
-            }
-        )
-
-        Row(
-            verticalAlignment = Alignment.Top,
-            horizontalArrangement = Arrangement.Start,
-            modifier = Modifier
-                .fillMaxSize()
-                .horizontalScroll(
-                    state = horizontalScrollState,
-                    enabled = false
-                )
-        ) {
-            // MapView
-            AdBlueMapView(
-                list = adBlueShopList.value,
-                adBlueVM = adBlueVM
-            )
-
-            // ListView
-            AdBlueListView(
-                list = adBlueShopList.value
-            )
-
-//            MultiRequestPermission(
-//                permissionList = listOf(
-//                    Manifest.permission.INTERNET,
-//                    Manifest.permission.ACCESS_NETWORK_STATE,
-//                    Manifest.permission.ACCESS_FINE_LOCATION,
-//                    Manifest.permission.ACCESS_COARSE_LOCATION
-//                ),
-//                whenGrated = {
-//                    // MapView
-//                    AdBlueMapView(
-//                        list = adBlueShopList.value,
-//                        adBlueVM = adBlueVM
-//                    )
-//                },
-//                whenDenied = {
-//                    Text(
-//                        text = "앙~ 거절띠~",
-//                        color = Color.White
-//                    )
-//                }
-//            )
-        }
-    }
-}
-/*
-MultiRequestPermission(
-            permissionList = listOf(
-                Manifest.permission.INTERNET,
-                Manifest.permission.ACCESS_NETWORK_STATE,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ),
-            whenGrated = {
-
-            },
-            whenDenied = {
-
             }
         )
  */
