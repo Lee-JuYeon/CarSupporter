@@ -1,6 +1,10 @@
 package com.cavss.carsupporter.util.permission
 
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -8,8 +12,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.cavss.carsupporter.R
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
@@ -19,6 +29,7 @@ import com.google.accompanist.permissions.rememberMultiplePermissionsState
 @Composable
 fun MultiRequestPermission(
     permissionList : List<String>,
+    modifier : Modifier,
     whenGrated : @Composable (() -> Unit),
     whenDenied : @Composable (() -> Unit)
 ) {
@@ -26,43 +37,88 @@ fun MultiRequestPermission(
     var doNotShowRationale by rememberSaveable { mutableStateOf(false) }
     val permissionsState = rememberMultiplePermissionsState(permissions = permissionList)
     when {
-        permissionsState.allPermissionsGranted -> {
-            Text("모든 권한이 승낙됨")
-            whenGrated()
-        }
-
+        permissionsState.allPermissionsGranted ->  whenGrated()
         permissionsState.shouldShowRationale || !permissionsState.permissionRequested -> {
-            if (doNotShowRationale) {
-                Text("사용불가한 상태입니다.")
-            } else {
-                Column {
+            when(true){
+                doNotShowRationale -> {
+                    Text(
+                        text = stringResource(id = R.string.permission_can_not_use),
+                        color = Color.White
+                    )
+                }
+                else -> {
                     val revokedPermissionsText = getPermissionsText(
                         permissionsState.revokedPermissions
                     )
-                    Text(
-                        "$revokedPermissionsText 권한이 승낙되지 않았습니다." +
-                                "기능을 사용하기 위해서 해당 권한을 사용 요청할까요?"
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = modifier,
+                        content = {
+                            Text(
+                                text = stringResource(id = R.string.permission_request_permission),
+                                fontSize = 37.sp,
+                                modifier = Modifier
+                                    .padding(10.dp),
+                                color = Color.White
+                            )
+                            Text(
+                                text = stringResource(id = R.string.permission_request_yes),
+                                fontSize = 35.sp,
+                                color = Color.Green,
+                                modifier = Modifier
+                                    .padding(
+                                        start = 10.dp,
+                                        end = 10.dp,
+                                        top = 25.dp,
+                                        bottom = 5.dp
+                                    )
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .border(
+                                        1.dp,
+                                        Color.Green,
+                                        RoundedCornerShape(10.dp)
+                                    )
+                                    .clickable {
+                                        permissionsState.launchMultiplePermissionRequest()
+                                    }
+                                    .padding(
+                                        start = 10.dp,
+                                        end = 10.dp,
+                                        top = 5.dp,
+                                        bottom = 5.dp
+                                    )
+                            )
+
+                            Text(
+                                text = stringResource(id = R.string.permission_request_no),
+                                fontSize = 35.sp,
+                                color = Color.Red,
+                                modifier = Modifier
+                                    .padding(
+                                        start = 10.dp,
+                                        end = 10.dp,
+                                        top = 25.dp,
+                                        bottom = 5.dp
+                                    )
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .border(
+                                        1.dp,
+                                        Color.Red,
+                                        RoundedCornerShape(10.dp)
+                                    )
+                                    .clickable {
+//                                        doNotShowRationale = true
+                                    }
+                                    .padding(
+                                        start = 10.dp,
+                                        end = 10.dp,
+                                        top = 5.dp,
+                                        bottom = 5.dp
+                                    )
+                            )
+                        }
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row {
-                        Button(
-                            onClick = {
-                                permissionsState.launchMultiplePermissionRequest()
-                            }
-                        ) {
-                            Text("네, 요청할래요!")
-//                            whenGrated()
-                        }
-                        Spacer(Modifier.width(8.dp))
-                        Button(
-                            onClick = {
-                                doNotShowRationale = true
-                            }
-                        ) {
-                            Text("아니요, 싫어요.")
-//                            whenDenied()
-                        }
-                    }
                 }
             }
         }
