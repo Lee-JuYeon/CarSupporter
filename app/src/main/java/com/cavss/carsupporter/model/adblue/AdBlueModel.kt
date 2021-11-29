@@ -7,7 +7,7 @@ data class AdBlueModel(
     val digit : String, // 전화번호
     val workTime : String, // 영업시간
     val stock : Double, // 재고량
-    val price : String, // 가격
+    val price : Int, // 가격
     val latitude : Double, // 위도
     val longitude : Double, // 경도
     val updateDate : String // 데이터 기준일
