@@ -18,7 +18,7 @@ class RetrofitManager {
     fun getDefShopList(completion : (ArrayList<AdBlueModel>) -> Unit){
         val call = iRetrofit?.GET_DefShopList(
             page = 1,
-            perPage = 200
+            perPage = 500
         ) ?: return
 
         call.enqueue(object : retrofit2.Callback<JsonElement>{
@@ -32,9 +32,9 @@ class RetrofitManager {
                         digit = "",
                         workTime = "",
                         stock = 0.0,
-                        price = "",
-                        latitude = "",
-                        longitude = "",
+                        price = 0,
+                        latitude = 0.0,
+                        longitude = 0.0,
                         updateDate = ""
                     )
                 )
@@ -45,58 +45,66 @@ class RetrofitManager {
             override fun onResponse(call: Call<JsonElement>, response: Response<JsonElement>) {
                 when(response.code()){
                     200 -> {
-                        response.body()?.let {
-                            val body = it.asJsonObject
-                            val data = body.getAsJsonArray("data")
+                        try {
+                            response.body()?.let {
+                                val body = it.asJsonObject
+                                val data = body.getAsJsonArray("data")
 
-                            val currentCount = body.get("currentCount").asInt
-                            if (currentCount == 0){
-                                dataArray.add(
-                                    AdBlueModel(
-                                        code = "",
-                                        title = "",
-                                        address = "",
-                                        digit = "",
-                                        workTime = "",
-                                        stock = 0.0,
-                                        price = "",
-                                        latitude = "",
-                                        longitude = "",
-                                        updateDate = ""
-                                    )
-                                )
-                            }else{
                                 data.forEach { resultItem ->
-                                    val resultItemObject = resultItem.asJsonObject
+                                    try {
+                                        val resultItemObject = resultItem.asJsonObject
 
-                                    val price = resultItemObject.get("가격").asString // 가격
-                                    val longitude = resultItemObject.get("경도").asString // 경도
-                                    val updateDate = resultItemObject.get("데이터기준일").asString // 데이터기준일
-                                    val title = resultItemObject.get("명칭").asString // 명칭
-                                    val workTime = resultItemObject.get("영업시간").asString // 영업시간
-                                    val latitude = resultItemObject.get("위도").asString // 위도
-                                    val stock = resultItemObject.get("재고량").asDouble // 재고량
-                                    val digit = resultItemObject.get("전화번호").asString // 전화번호
-                                    val address = resultItemObject.get("주소").asString // 주소
-                                    val code = resultItemObject.get("코드").asString // 코드
+                                        val price = resultItemObject.get("price").asString // 가격
+                                        val longitude = resultItemObject.get("lng").asString // 경도
+                                        val updateDate =
+                                            resultItemObject.get("regDt").asString // 데이터기준일
+                                        val title = resultItemObject.get("name").asString // 명칭
+                                        val workTime =
+                                            resultItemObject.get("openTime").asString // 영업시간
+                                        val latitude = resultItemObject.get("lat").asString // 위도
+                                        val stock =
+                                            resultItemObject.get("inventory").asString // 재고량
+                                        val digit = resultItemObject.get("tel").asString // 전화번호
+                                        val address = resultItemObject.get("addr").asString // 주소
+                                        val code = resultItemObject.get("code").asString // 코드
 
-                                    val photoItem = AdBlueModel(
-                                        price = price,
-                                        longitude = longitude,
-                                        updateDate = updateDate,
-                                        title = title,
-                                        workTime = workTime,
-                                        latitude = latitude,
-                                        stock = stock,
-                                        digit = digit,
-                                        address = address,
-                                        code = code
-                                    )
-                                    dataArray.add(photoItem)
+                                        val photoItem = AdBlueModel(
+                                            price = price.toInt(),
+                                            longitude = longitude.toDouble(),
+                                            updateDate = updateDate,
+                                            title = title,
+                                            workTime = workTime,
+                                            latitude = latitude.toDouble(),
+                                            stock = stock.toDouble(),
+                                            digit = digit,
+                                            address = address,
+                                            code = code
+                                        )
+                                        dataArray.add(photoItem)
+                                    } catch (e: Exception) {
+                                        Log.e(
+                                            "mException",
+                                            "RetrofitManager, getDefShopList, onResponse, 200, list 작업 // Exception : ${e.message}"
+                                        )
+                                    } catch (e: NumberFormatException) {
+                                        Log.e(
+                                            "mException",
+                                            "RetrofitManager, getDefShopList, onResponse, 200, list 작업 // NumberFormatException : ${e.message}"
+                                        )
+                                    }
                                 }
+                                completion(dataArray)
                             }
-                            completion(dataArray)
+                        }catch (e:UnsupportedOperationException){
+                            Log.e("mException", "RetrofitManager, getDefShopList, onResponse, 200 // UnsupportedOperationException : ${e.localizedMessage}" )
+                        }catch (e:Exception){
+                            Log.e("mException", "RetrofitManager, getDefShopList, onResponse, 200 // Exception : ${e.localizedMessage}" )
+                        }catch (e:NumberFormatException){
+                            Log.e("mException", "RetrofitManager, getDefShopList, onResponse, 200 // NumberFormatException : ${e.message}" )
                         }
+                    }
+                    else -> {
+                        Log.e("mException", "other error code : ${response.code()}")
                     }
                 }
             }
