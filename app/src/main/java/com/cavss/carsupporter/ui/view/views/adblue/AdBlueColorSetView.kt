@@ -28,11 +28,10 @@ fun AdBlueColorSetView(){
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier,
         content = {
-            val rangeList = listOf<Int>(
+            val rangeList = listOf(
                 R.string.adblue_range_1000,
                 R.string.adblue_range_300,
-                R.string.adblue_range_1,
-                R.string.adblue_range_0
+                R.string.adblue_range_1
             )
             items(rangeList){ range ->
                 Row(
@@ -67,9 +66,6 @@ fun AdBlueColorSetView(){
                                     }
                                     R.string.adblue_range_1 -> {
                                         Color.Red
-                                    }
-                                    R.string.adblue_range_0 -> {
-                                        Color.White
                                     }
                                     else -> Color.White
                                 }
