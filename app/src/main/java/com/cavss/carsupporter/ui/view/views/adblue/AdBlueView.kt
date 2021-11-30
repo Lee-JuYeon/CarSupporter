@@ -41,8 +41,6 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun AdBlueView(adBlueVM: AdBlueVM) {
-    val configuration = LocalConfiguration.current
-    val screenWidth = configuration.screenWidthDp
 
     val adBlueShopList = remember { mutableStateOf(listOf<AdBlueModel>()) }
     adBlueVM.getAdBlueList.observe(LocalLifecycleOwner.current) { list ->
@@ -56,23 +54,24 @@ fun AdBlueView(adBlueVM: AdBlueVM) {
             .fillMaxSize()
     ) {
 
-        // TextFiled View
-        TextField(
-            value = adBlueVM.getText.value ?: "",
-            onValueChange = {
-                adBlueVM.setText(it)
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(80.dp)
-                .padding(5.dp)
-        )
+//        // TextFiled View
+//        TextField(
+//            value = adBlueVM.getText.value,
+//            onValueChange = {
+//                adBlueVM.setText(it)
+//            },
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .height(80.dp)
+//                .padding(5.dp)
+//        )
 
         AdBlueColorSetView()
 
         MultiRequestPermission(
             permissionList = listOf(
                 Manifest.permission.INTERNET,
+                Manifest.permission.CALL_PHONE,
                 Manifest.permission.ACCESS_NETWORK_STATE,
                 Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_COARSE_LOCATION
@@ -86,6 +85,9 @@ fun AdBlueView(adBlueVM: AdBlueVM) {
                     modifier = Modifier
                         .fillMaxSize()
                 ) {
+                    // option List
+                    AdBlueOptionView(adBlueVM, adBlueShopList)
+
                     // ListView
                     AdBlueListView(
                         list = adBlueShopList.value,
@@ -102,7 +104,7 @@ fun AdBlueView(adBlueVM: AdBlueVM) {
             whenDenied = {
                 Text(
                     text = stringResource(id = R.string.permission_can_not_use_by_denied),
-                    color = androidx.compose.ui.graphics.Color.White
+                    color = Color.White
                 )
             }
         )
